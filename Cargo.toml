@@ -1,0 +1,7 @@
+[package]
+name = "yawt-lib"
+version = "0.1.0"
+edition = "2021"
+license = "Apache License Version 2.0"
+
+[dependencies]
