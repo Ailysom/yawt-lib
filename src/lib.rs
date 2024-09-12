@@ -1,4 +1,10 @@
 mod task;
+mod state_handler;
+mod error;
+
+trait YawtObject {
+	
+}
 
 pub fn add(left: u64, right: u64) -> u64 {
 	left + right

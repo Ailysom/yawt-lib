@@ -1,13 +1,10 @@
-use std::{
-    default::{
-        Default,
-    }
-};
 use chrono::{
     DateTime,
     Utc,
 };
 use uuid::Uuid;
+
+use crate::YawtObject;
 
 #[derive(Debug,PartialEq)]
 pub struct Task {
@@ -17,6 +14,8 @@ pub struct Task {
     pub priority: u8, // 1 to 10. Default: 5.
     time_stamp: DateTime<Utc>, // Time of creation,
 }
+
+impl YawtObject for Task {}
 
 impl Default for Task {
     fn default() -> Self {
