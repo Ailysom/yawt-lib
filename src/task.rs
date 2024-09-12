@@ -2,20 +2,28 @@ use chrono::{
     DateTime,
     Utc,
 };
+use serde_json::json;
 use uuid::Uuid;
 
 use crate::YawtObject;
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq,serde::Serialize)]
 pub struct Task {
     pub id: Uuid, // uuid v4
     pub description: String, // Body of task. Format: Markdown
     pub deadline: DateTime<Utc>,
     pub priority: u8, // 1 to 10. Default: 5.
-    time_stamp: DateTime<Utc>, // Time of creation,
+    pub time_stamp: DateTime<Utc>, // Time of creation,
 }
 
-impl YawtObject for Task {}
+impl YawtObject for Task {
+    fn new() -> Self {
+        return Task {..Default::default()};
+    }
+    fn to_json(&self) -> String {
+        json!(self).to_string()
+    }
+}
 
 impl Default for Task {
     fn default() -> Self {
@@ -33,6 +41,8 @@ impl Default for Task {
 #[cfg(test)]
 mod tests {
 
+use std::str::FromStr;
+
 use super::*;
 
 	#[test]
@@ -40,13 +50,8 @@ use super::*;
         let using_default = Task {
             ..Default::default()
         };
-		let result = Task {
-            id: using_default.id,
-            description: String::from(""),
-            deadline: using_default.time_stamp,
-            priority: 5,
-            time_stamp: using_default.time_stamp,
-        };
-		assert_eq!(result, using_default);
+        // TODO: convert data to json and compare it after
+		let result = String::from_str("{\"deadline\":\"2024-09-12T23:55:29.060642061Z\",\"description\":\"\",\"id\":\"b0968c56-11ed-445f-b4e2-db082e30149f\",\"priority\":5,\"time_stamp\":\"2024-09-12T23:55:29.060642061Z\"}").unwrap();
+		assert_eq!(result, using_default.to_json());
 	}
 }
