@@ -4,10 +4,12 @@ use chrono::{
 };
 use serde_json::json;
 use uuid::Uuid;
-
+use diesel::prelude::*;
 use crate::YawtObject;
 
-#[derive(Debug,PartialEq,serde::Serialize)]
+#[derive(Debug,PartialEq,serde::Serialize,Queryable)]
+#[diesel(table_name = crate::schema::task)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct Task {
     pub id: Uuid, // uuid v4
     pub description: String, // Body of task. Format: Markdown
@@ -50,8 +52,17 @@ use super::*;
         let using_default = Task {
             ..Default::default()
         };
-        // TODO: convert data to json and compare it after
-		let result = String::from_str("{\"deadline\":\"2024-09-12T23:55:29.060642061Z\",\"description\":\"\",\"id\":\"b0968c56-11ed-445f-b4e2-db082e30149f\",\"priority\":5,\"time_stamp\":\"2024-09-12T23:55:29.060642061Z\"}").unwrap();
+        // because by default deadline eq timestamp & it's public
+        let now = using_default.deadline.to_rfc3339_opts(
+            chrono::SecondsFormat::Nanos,
+            true
+        );
+        let result = format!(
+            "{{\"deadline\":\"{}\",\"description\":\"\",\"id\":\"{}\",\"priority\":5,\"time_stamp\":\"{}\"}}",
+            now,
+            using_default.id,
+            now,
+        );
 		assert_eq!(result, using_default.to_json());
 	}
 }

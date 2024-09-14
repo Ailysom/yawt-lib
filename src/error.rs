@@ -1,4 +1,4 @@
 #[derive(Debug)]
-pub struct Error {
-    pub message: String,
+pub struct Error<'a> {
+    pub message: &'a str,
 }

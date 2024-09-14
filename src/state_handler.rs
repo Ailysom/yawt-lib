@@ -1,5 +1,4 @@
 use uuid::Uuid;
-
 use crate::YawtObject;
 
 pub trait StateHandler<T>

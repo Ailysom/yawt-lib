@@ -2,6 +2,7 @@ mod task;
 mod state_handler;
 mod error;
 mod sqlite_handler;
+mod schema;
 
 trait YawtObject {
 	fn new() -> Self;
