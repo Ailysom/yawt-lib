@@ -1,13 +1,16 @@
+use std::str::FromStr;
+
 use chrono::{
     DateTime,
     Utc,
 };
 use serde_json::json;
+use diesel::{backend::Backend, prelude::*, deserialize};
+
 use uuid::Uuid;
-use diesel::prelude::*;
 use crate::YawtObject;
 
-#[derive(Debug,PartialEq,serde::Serialize,Queryable)]
+#[derive(Debug,PartialEq,serde::Serialize,Queryable,Selectable)]
 #[diesel(table_name = crate::schema::task)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct Task {
@@ -16,6 +19,20 @@ pub struct Task {
     pub deadline: DateTime<Utc>,
     pub priority: u8, // 1 to 10. Default: 5.
     pub time_stamp: DateTime<Utc>, // Time of creation,
+}
+
+struct YawtUuid(uuid::Uuid);
+
+impl<DB> Queryable<Text, DB> for LowercaseString
+where
+    DB: Backend,
+    String: FromSql<Text, DB>,
+{
+    type Row = String;
+
+    fn build(s: String) -> deserialize::Result<Self> {
+        Ok(LowercaseString(s.to_lowercase()))
+    }
 }
 
 impl YawtObject for Task {
@@ -43,8 +60,6 @@ impl Default for Task {
 #[cfg(test)]
 mod tests {
 
-use std::str::FromStr;
-
 use super::*;
 
 	#[test]
@@ -58,7 +73,7 @@ use super::*;
             true
         );
         let result = format!(
-            "{{\"deadline\":\"{}\",\"description\":\"\",\"id\":\"{}\",\"priority\":5,\"time_stamp\":\"{}\"}}",
+            "{{\"deadline\":\"{}\",\"description\":\"\",\"id\":\"{:?}\",\"priority\":5,\"time_stamp\":\"{}\"}}",
             now,
             using_default.id,
             now,

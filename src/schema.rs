@@ -6,7 +6,7 @@ diesel::table! {
         description -> Text,
         priority -> Integer,
         published -> Bool,
-        deadline -> Text,
-        time_stamp -> Text,
+        deadline -> Timestamp,
+        time_stamp -> Timestamp,
     }
 }

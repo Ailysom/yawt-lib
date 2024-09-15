@@ -1,21 +1,18 @@
-use crate::{schema::{self, task::priority}, state_handler, task::Task};
+use crate::{state_handler, task::Task,};
 use uuid::Uuid;
 use diesel::prelude::*;
-use schema::task::dsl::task;
+use crate::schema::task::dsl::task;
 struct SqliteHandler {}
 
 impl<T> state_handler::StateHandler<T> for SqliteHandler 
 where T: super::YawtObject {
     fn get(&self, id: Uuid) -> Result<T, crate::error::Error> {
-        let mut conn: SqliteConnection = SqliteConnection::establish("./test.db").unwrap();
+        let conn = &mut SqliteConnection::establish("./test.db").unwrap();
+        let result: Vec<Task> = task
+            .select(Task::as_select())
+            .load(conn)
+            .expect("Eror loading task");
         
-        let result: Task = task.first(&mut conn).unwrap();
-        // let result: Vec<Task> = task
-        //     .filter(priority.eq(5))
-        //     .load(&mut conn)
-        //     .unwrap();
-
-
         Err(crate::error::Error {
             message: "not implemented",
         })
