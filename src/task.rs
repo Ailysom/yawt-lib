@@ -1,52 +1,44 @@
-use std::str::FromStr;
-
-use chrono::{
-    DateTime,
-    Utc,
+use {
+    crate::yawt_object::YawtObject, chrono::{
+        DateTime, NaiveDateTime, Utc
+    }, std::str::FromStr, uuid::Uuid
 };
-use serde_json::json;
-use diesel::{backend::Backend, prelude::*, deserialize};
 
-use uuid::Uuid;
-use crate::YawtObject;
 
-#[derive(Debug,PartialEq,serde::Serialize,Queryable,Selectable)]
-#[diesel(table_name = crate::schema::task)]
-#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+#[derive(Debug,PartialEq,serde::Serialize)]
 pub struct Task {
     pub id: Uuid, // uuid v4
     pub description: String, // Body of task. Format: Markdown
-    pub deadline: DateTime<Utc>,
+    pub deadline: NaiveDateTime,
     pub priority: u8, // 1 to 10. Default: 5.
-    pub time_stamp: DateTime<Utc>, // Time of creation,
+    pub time_stamp: NaiveDateTime, // Time of creation,
 }
 
-struct YawtUuid(uuid::Uuid);
-
-impl<DB> Queryable<Text, DB> for LowercaseString
-where
-    DB: Backend,
-    String: FromSql<Text, DB>,
-{
-    type Row = String;
-
-    fn build(s: String) -> deserialize::Result<Self> {
-        Ok(LowercaseString(s.to_lowercase()))
-    }
-}
 
 impl YawtObject for Task {
     fn new() -> Self {
         return Task {..Default::default()};
     }
-    fn to_json(&self) -> String {
-        json!(self).to_string()
+    fn from_sqlite_row(row: &rusqlite::Row) -> Self {
+        Task {
+            id: Uuid::from_str(&(row.get::<usize, String>(0).unwrap())).unwrap(),
+            description: row.get(1).unwrap(),
+            deadline: NaiveDateTime::parse_from_str(
+                &(row.get::<usize, String>(5).unwrap()),
+                "%Y-%m-%d %H:%M:%S",
+            ).unwrap(),
+            time_stamp: NaiveDateTime::parse_from_str(
+                &(row.get::<usize, String>(5).unwrap()),
+                "%Y-%m-%d %H:%M:%S",
+            ).unwrap(),
+            priority: row.get::<usize, u8>(2).unwrap(),
+        }
     }
 }
 
 impl Default for Task {
     fn default() -> Self {
-        let now = chrono::offset::Utc::now();
+        let now = chrono::offset::Utc::now().naive_local();
         Task {
             id: Uuid::new_v4(),
             description: String::from(""),
@@ -68,10 +60,7 @@ use super::*;
             ..Default::default()
         };
         // because by default deadline eq timestamp & it's public
-        let now = using_default.deadline.to_rfc3339_opts(
-            chrono::SecondsFormat::Nanos,
-            true
-        );
+        let now = using_default.time_stamp;
         let result = format!(
             "{{\"deadline\":\"{}\",\"description\":\"\",\"id\":\"{:?}\",\"priority\":5,\"time_stamp\":\"{}\"}}",
             now,
