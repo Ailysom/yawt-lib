@@ -1,5 +1,5 @@
 use crate::{
-    backend::{Backend, BackendConnector},
+    backend::Backend,
     yawt_object::{
         YawtError, YawtObject
     },
@@ -10,14 +10,8 @@ pub struct SqliteHandler {
     connection: rusqlite::Connection,
 }
 
-impl<T> Backend<T> for SqliteHandler
-where
-    T: YawtObject,
+impl Backend for SqliteHandler
 {
-    // Implementation here
-}
-
-impl  BackendConnector for SqliteHandler {
     fn connect(connection_string: &str) -> Result<SqliteHandler, YawtError> {
         let con = match rusqlite::Connection::open(connection_string) {
             Ok(con) => con,
@@ -27,6 +21,18 @@ impl  BackendConnector for SqliteHandler {
             path_to_file: String::from(connection_string),
             connection: con,
         })
+    }
+
+    fn save<T: YawtObject>(&self, obj: &T) -> Result<(), YawtError> {
+        let values = obj.to_string_array();
+        let execute_string = format!(
+            "INSERT INTO {} ({}) values ({}?)",
+            T::get_storage_name(),
+            T::get_positions_for_sql(),
+            "?, ".repeat(values.len() - 1)
+        );
+        self.connection.execute(&execute_string, values);
+        return Err(YawtError::from_str("not implemented yet"));
     }
 }
 

@@ -12,6 +12,9 @@ where Self: serde::Serialize + Sized {
     fn from_sqlite_row<'a>(row: &rusqlite::Row) -> Result<Self, YawtError> {
         return Err(YawtError::from_str("not implemented yet"));
     }
+    fn to_string_array(&self) -> [String; 5]; //TODO: Change 5, to usize
+    fn get_storage_name() -> &'static str;
+    fn get_positions_for_sql() -> &'static str;
 }
 
 #[derive(Debug)]

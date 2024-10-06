@@ -2,6 +2,7 @@ use {
     crate::yawt_object::YawtObject,
     chrono::NaiveDateTime, 
     uuid::Uuid,
+    std::rc::Rc,
 };
 
 
@@ -16,6 +17,21 @@ pub struct Task {
 
 
 impl YawtObject for Task {
+    fn get_storage_name() -> &'static str {
+        "task"
+    }
+    fn get_positions_for_sql() -> &'static str {
+        "id, description, deadline, priority, time_stamp"
+    }
+    fn to_string_array(&self) -> [String; 5] {
+        [
+            String::from(self.id),
+            self.description.clone(),
+            self.deadline.to_string(),
+            self.priority.to_string(),
+            self.time_stamp.to_string(),
+        ]
+    }
 }
 
 impl Default for Task {
@@ -34,7 +50,7 @@ impl Default for Task {
 #[cfg(test)]
 mod tests {
     use {
-        super::*, crate::{backend::{ BackendConnector, Backend}, sqlite_backend::SqliteHandler}, std::str::FromStr
+        super::*, crate::{backend::Backend, sqlite_backend::*}, std::str::FromStr
     };
 
     #[test]
