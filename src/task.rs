@@ -1,7 +1,7 @@
 use {
-    crate::yawt_object::YawtObject, chrono::{
-        DateTime, NaiveDateTime, Utc
-    }, std::str::FromStr, uuid::Uuid
+    crate::yawt_object::YawtObject,
+    chrono::NaiveDateTime, 
+    uuid::Uuid,
 };
 
 
@@ -16,24 +16,6 @@ pub struct Task {
 
 
 impl YawtObject for Task {
-    fn new() -> Self {
-        return Task {..Default::default()};
-    }
-    fn from_sqlite_row(row: &rusqlite::Row) -> Self {
-        Task {
-            id: Uuid::from_str(&(row.get::<usize, String>(0).unwrap())).unwrap(),
-            description: row.get(1).unwrap(),
-            deadline: NaiveDateTime::parse_from_str(
-                &(row.get::<usize, String>(5).unwrap()),
-                "%Y-%m-%d %H:%M:%S",
-            ).unwrap(),
-            time_stamp: NaiveDateTime::parse_from_str(
-                &(row.get::<usize, String>(5).unwrap()),
-                "%Y-%m-%d %H:%M:%S",
-            ).unwrap(),
-            priority: row.get::<usize, u8>(2).unwrap(),
-        }
-    }
 }
 
 impl Default for Task {
@@ -51,22 +33,28 @@ impl Default for Task {
 
 #[cfg(test)]
 mod tests {
+    use {
+        super::*, crate::{backend::{ BackendConnector, Backend}, sqlite_backend::SqliteHandler}, std::str::FromStr
+    };
 
-use super::*;
-
-	#[test]
-	fn default_task() {
-        let using_default = Task {
-            ..Default::default()
+    #[test]
+    // Test functions create, update and delete.
+    fn lifecycle_sqlite() {
+        let example = Task {
+            id: Uuid::from_str("579c9fce-7919-4851-adf0-f9f4ae1d081b").unwrap(),
+            description: String::from_str("Just Do It!").unwrap(),
+            deadline: NaiveDateTime::parse_from_str("2022-01-01 12:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
+            priority: 8,
+            time_stamp: NaiveDateTime::parse_from_str("2022-01-01 12:00:00", "%Y-%m-%d %H:%M:%S").unwrap(),
         };
-        // because by default deadline eq timestamp & it's public
-        let now = using_default.time_stamp;
-        let result = format!(
-            "{{\"deadline\":\"{}\",\"description\":\"\",\"id\":\"{:?}\",\"priority\":5,\"time_stamp\":\"{}\"}}",
-            now,
-            using_default.id,
-            now,
-        );
-		assert_eq!(result, using_default.to_json());
-	}
+        let back = SqliteHandler::connect("test.db").unwrap();
+        back.save(&example).unwrap();
+        let recv_object: Task = back.get(Uuid::from_str("579c9fce-7919-4851-adf0-f9f4ae1d081b").unwrap()).unwrap();
+        assert_eq!(example, recv_object);
+        back.delete(&recv_object).unwrap();
+        let recv_object_after_delete: Result<Task, crate::yawt_object::YawtError> = back.get(Uuid::from_str("579c9fce-7919-4851-adf0-f9f4ae1d081b").unwrap());
+        if let Ok(_) = recv_object_after_delete {
+            panic!("After delete must return error");
+        }
+    }
 }
